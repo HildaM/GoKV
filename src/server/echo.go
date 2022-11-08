@@ -32,12 +32,13 @@ type Client struct {
 }
 
 func (c *Client) Close() error {
+	// 等待数据发送完成或超时
 	c.Waiting.WaitWithTimeout(10 * time.Second)
 	c.Conn.Close()
 	return nil
 }
 
-func (h *EchoHandler) Hanlder(ctx context.Context, conn net.Conn) {
+func (h *EchoHandler) Handler(ctx context.Context, conn net.Conn) {
 	// 如果不等于0，说明在关闭状态下有请求连接
 	if h.closing.Get() {
 		conn.Close()
@@ -61,7 +62,7 @@ func (h *EchoHandler) Hanlder(ctx context.Context, conn net.Conn) {
 			return
 		}
 
-		// 使用waitGroup进行并发保护
+		// 使用waitGroup进行并发保护，确保信息正常发送
 		client.Waiting.Add(1)
 		b := []byte(msg)
 		conn.Write(b)
