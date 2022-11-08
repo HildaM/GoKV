@@ -1,12 +1,12 @@
 package server
 
 import (
+	"Godis/src/lib/logger"
 	"Godis/src/lib/sync/atomic"
 	"Godis/src/lib/sync/wait"
 	"bufio"
 	"context"
 	"io"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -54,10 +54,10 @@ func (h *EchoHandler) Handler(ctx context.Context, conn net.Conn) {
 		msg, err := reader.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				log.Println("connection close")
+				logger.Info("connection close")
 				h.activeConn.Delete(conn)
 			} else {
-				log.Println(err)
+				logger.Warn(err)
 			}
 			return
 		}
@@ -71,7 +71,7 @@ func (h *EchoHandler) Handler(ctx context.Context, conn net.Conn) {
 }
 
 func (h *EchoHandler) Close() error {
-	log.Println("handler shuting donw.....")
+	logger.Info("handler shuting donw.....")
 	h.closing.Set(true)
 
 	// 将sync.Map中所有client关闭

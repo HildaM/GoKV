@@ -2,10 +2,10 @@ package server
 
 import (
 	"Godis/src/interface/tcp"
+	"Godis/src/lib/logger"
 	"Godis/src/lib/sync/atomic"
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -22,7 +22,7 @@ type Config struct {
 func ListenAndServe(cfg *Config, handler tcp.Handler) {
 	listener, err := net.Listen("tcp", cfg.Address)
 	if err != nil {
-		log.Fatal(fmt.Sprintf("listen err: %v", err))
+		logger.Fatal(fmt.Sprintf("listen err: %v", err))
 	}
 
 	// 监听中断信号并通过 closeChan 通知服务器关闭
@@ -35,14 +35,14 @@ func ListenAndServe(cfg *Config, handler tcp.Handler) {
 		sig := <-sigCh
 		switch sig {
 		case syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
-			log.Println("shuting down...")
+			logger.Info("shuting down...")
 			closing.Set(true)
 			listener.Close()
 		}
 	}()
 
 	// 监听端口
-	log.Println(fmt.Sprintf("bind: %s, starting listening...", cfg.Address))
+	logger.Info(fmt.Sprintf("bind: %s, starting listening...", cfg.Address))
 	// 作关闭操作。需要先关闭listener，再关闭handler
 	// defer 后进先出执行
 	defer handler.Close()
@@ -56,11 +56,11 @@ func ListenAndServe(cfg *Config, handler tcp.Handler) {
 			if closing.Get() {
 				return // 直接退出
 			}
-			log.Println(fmt.Sprintf("accept err: %v", err))
+			logger.Error(fmt.Sprintf("accept err: %v", err))
 			continue
 		}
 
-		log.Println("accept link")
+		logger.Info("accept link")
 		go handler.Handler(ctx, conn)
 	}
 }
