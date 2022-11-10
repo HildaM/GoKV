@@ -1,8 +1,9 @@
 package main
 
 import (
-	"Godis/src/lib/logger"
-	"Godis/src/server"
+	"Godis/lib/logger"
+	"Godis/redis/server"
+	"Godis/tcp"
 	"time"
 )
 
@@ -14,9 +15,9 @@ func main() {
 		TimeFormat: "2006-01-02",
 	})
 
-	server.ListenAndServe(&server.Config{
+	tcp.ListenAndServe(&tcp.Config{
 		Address:    ":6399",
 		MaxConnect: 16,
 		Timeout:    2 * time.Second,
-	}, server.MakeEchoHandler())
+	}, server.MakeHandler())
 }

@@ -1,9 +1,9 @@
-package server
+package tcp
 
 import (
-	"Godis/src/lib/logger"
-	"Godis/src/lib/sync/atomic"
-	"Godis/src/lib/sync/wait"
+	"Godis/lib/logger"
+	"Godis/lib/sync/atomic"
+	"Godis/lib/sync/wait"
 	"bufio"
 	"context"
 	"io"
@@ -71,7 +71,7 @@ func (h *EchoHandler) Handler(ctx context.Context, conn net.Conn) {
 }
 
 func (h *EchoHandler) Close() error {
-	logger.Info("handler shuting donw.....")
+	logger.Info("client shuting donw.....")
 	h.closing.Set(true)
 
 	// 将sync.Map中所有client关闭

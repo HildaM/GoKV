@@ -1,8 +1,8 @@
 package db
 
 import (
-	"Godis/src/interface/redis"
-	"Godis/src/redis/reply"
+	"Godis/interface/redis"
+	"Godis/redis/protocol"
 )
 
 /*
@@ -20,7 +20,7 @@ func Ping(args [][]byte) redis.Reply {
 	if len(args) == 0 {
 		return &PongReply{}
 	} else if len(args) == 1 {
-		return reply.MakeStatusReply("\"" + string(args[0]))
+		return protocol.MakeStatusReply("\"" + string(args[0]))
 	} else {
 		return &ArgNumErrReply{}
 	}

@@ -1,13 +1,13 @@
-package handler
+package connection
 
 import (
-	"Godis/src/lib/sync/atomic"
-	"Godis/src/lib/sync/wait"
+	"Godis/lib/sync/atomic"
+	"Godis/lib/sync/wait"
 	"net"
 	"time"
 )
 
-type Client struct {
+type Connection struct {
 	conn net.Conn
 
 	// 等待响应处理完成
@@ -25,14 +25,22 @@ type Client struct {
 	sentLines [][]byte
 }
 
-func (c *Client) Close() error {
+func (c *Connection) RemoteAddr() net.Addr {
+	return c.conn.RemoteAddr()
+}
+
+func (c *Connection) Close() error {
 	c.waittingReply.WaitWithTimeout(10 * time.Second)
 	c.conn.Close()
 	return nil
 }
 
-func MakeClient(conn net.Conn) *Client {
-	return &Client{
+func (c *Connection) Write(i interface{}) interface{} {
+	return nil
+}
+
+func NewConn(conn net.Conn) *Connection {
+	return &Connection{
 		conn: conn,
 	}
 }

@@ -1,9 +1,9 @@
-package server
+package tcp
 
 import (
-	"Godis/src/interface/tcp"
-	"Godis/src/lib/logger"
-	"Godis/src/lib/sync/atomic"
+	"Godis/interface/tcp"
+	"Godis/lib/logger"
+	"Godis/lib/sync/atomic"
 	"context"
 	"fmt"
 	"net"
@@ -61,6 +61,6 @@ func ListenAndServe(cfg *Config, handler tcp.Handler) {
 		}
 
 		logger.Info("accept link")
-		go handler.Handler(ctx, conn)
+		go handler.Handle(ctx, conn)
 	}
 }

@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"Godis/src/lib/files"
+	"Godis/lib/files"
 	"fmt"
 	"io"
 	"log"
