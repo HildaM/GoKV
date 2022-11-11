@@ -3,6 +3,7 @@ package database
 import (
 	"Godis/database/db"
 	"Godis/interface/redis"
+	"Godis/redis/protocol"
 )
 
 // 存储实现相关命令的函数
@@ -15,7 +16,7 @@ type DB struct {
 
 func (db *DB) Exec(client redis.Connection, cmdLine [][]byte) redis.Reply {
 	//TODO implement me
-	panic("implement me")
+	return &protocol.EmptyMultiBulkReply{}
 }
 
 func (db *DB) AfterClientClose(c redis.Connection) {

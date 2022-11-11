@@ -6,6 +6,8 @@ import (
 	"Godis/redis/protocol"
 	"bufio"
 	"bytes"
+	"errors"
+	"fmt"
 	"io"
 	"runtime/debug"
 	"strconv"
@@ -39,7 +41,7 @@ func parse0(rawReader io.Reader, ch chan<- *Payload) {
 			close(ch)
 			return
 		}
-
+		// len <= 2是不合法的，至少有3个以上的字符，毕竟CRLF就已经len=2了
 		length := len(line)
 		if length <= 2 || line[length-2] != '\r' {
 			protocolError(ch, line)
@@ -91,15 +93,89 @@ func parse0(rawReader io.Reader, ch chan<- *Payload) {
 	}
 }
 
-// TODO
-func parseArray(line []byte, reader *bufio.Reader, ch chan<- *Payload) error {
+// parseArray 处理多条命令
+func parseArray(header []byte, reader *bufio.Reader, ch chan<- *Payload) error {
+	// 1. 获取命令长度
+	nStrs, err := strconv.ParseInt(string(header[1:]), 10, 64)
+	if err != nil || nStrs < 0 {
+		protocolError(ch, header)
+		return err
+	} else if nStrs == 0 {
+		ch <- &Payload{
+			Data: protocol.MakeEmptyMultiBulkReply(),
+		}
+		return nil
+	}
+
+	// 2. 获取接下来的命令
+	bodys := make([][]byte, 0, nStrs)
+	for i := int64(0); i < nStrs; i++ {
+		// 1. 获取命令长度
+		var line []byte
+		line, err = reader.ReadBytes('\n')
+		if err != nil {
+			return nil
+		}
+		length := len(line)
+		if length < 4 || line[length-2] != '\r' || line[0] != '$' {
+			// $(num)CRLF：最低长度为4
+			protocolError(ch, line)
+			return nil
+		}
+
+		// 2. 获取真实命令，并将其放入bodys中
+		strLen, err := strconv.ParseInt(string(line[1:length-2]), 10, 64)
+		if err != nil || strLen < -1 {
+			protocolError(ch, line)
+			return nil
+		} else if strLen == 0 {
+			bodys = append(bodys, []byte{})
+		} else {
+			body := make([]byte, strLen+2)
+			_, err = io.ReadFull(reader, body)
+			if err != nil {
+				return err
+			}
+			bodys = append(bodys, body)
+		}
+	}
+
+	// 返回最终结果
+	ch <- &Payload{
+		Data: protocol.MakeMultiBulkReply(bodys),
+	}
 	return nil
 }
 
-func parseBulkString(line []byte, reader *bufio.Reader, ch chan<- *Payload) error {
+// parseBulkString 处理字符串数据
+func parseBulkString(header []byte, reader *bufio.Reader, ch chan<- *Payload) error {
+	// 1. 获取命令长度
+	cmdLen, err := strconv.ParseInt(string(header[1:]), 10, 64)
+	if err != nil || cmdLen < -1 { // 正常情况：$(num), header[1:]的长度至少为1
+		protocolError(ch, header)
+		return err
+	} else if cmdLen == -1 { // 空命令
+		ch <- &Payload{
+			Data: protocol.MakeNullBulkReply(),
+		}
+		return nil
+	}
+
+	// 2. 获取命令本体
+	body := make([]byte, cmdLen+2) // 加上CRLF
+	_, err = io.ReadFull(reader, body)
+	if err != nil {
+		return err
+	}
+
+	ch <- &Payload{
+		Data: protocol.MakeBulkReply(body[:len(body)-2]), // 减去CRLF
+	}
 	return nil
 }
 
+// protocolError 协议异常情况处理封装方法
 func protocolError(ch chan<- *Payload, line []byte) {
-	return
+	err := errors.New(fmt.Sprintf("Protocol error: %s", string(line[1:])))
+	ch <- &Payload{Err: err}
 }

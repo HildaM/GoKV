@@ -74,7 +74,7 @@ func MakeStatusReply(status string) *StatusReply {
 }
 
 func (r *StatusReply) ToBytes() []byte {
-	return []byte("+" + r.Status + "\r\n")
+	return []byte("+" + r.Status + CRLF)
 }
 
 // 错误消息
@@ -89,7 +89,7 @@ func MakeErrReply(status string) *ErrReply {
 }
 
 func (r *ErrReply) ToBytes() []byte {
-	return []byte("-" + r.Status + "\r\n")
+	return []byte("-" + r.Status + CRLF)
 }
 
 // 数字消息
