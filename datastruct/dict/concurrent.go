@@ -29,6 +29,7 @@ func computeCapcity(param int) int {
 	if param <= 16 {
 		return 16
 	}
+	// 将param转换为最接近的2的2次方数
 	n := param - 1
 	n |= n >> 1
 	n |= n >> 2
@@ -75,6 +76,7 @@ func fnv32(key string) uint32 {
 // 参考Java ConcurrentHashMap 实现spread方法
 const HASH_BITS = 0x7fffffff // usable bits of normal node hash
 
+// TODO 未验证是否正确
 func (dict *ConcurrentDict) spread(hashCode uint32) uint32 {
 	if dict == nil {
 		panic("dict is nil")
