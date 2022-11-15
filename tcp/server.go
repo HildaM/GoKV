@@ -3,12 +3,13 @@ package tcp
 import (
 	"Godis/interface/tcp"
 	"Godis/lib/logger"
-	"Godis/lib/sync/atomic"
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -19,15 +20,10 @@ type Config struct {
 	Timeout    time.Duration `yaml:"timeout"`
 }
 
-func ListenAndServe(cfg *Config, handler tcp.Handler) {
-	listener, err := net.Listen("tcp", cfg.Address)
-	if err != nil {
-		logger.Fatal(fmt.Sprintf("listen err: %v", err))
-	}
-
-	// 监听中断信号并通过 closeChan 通知服务器关闭
-	var closing atomic.AtomicBool
-	sigCh := make(chan os.Signal, 1)
+// ListenAndServerWithSignal 绑定IP+端口。响应系统中断停止
+func ListenAndServerWithSignal(cfg *Config, handler tcp.Handler) error {
+	closeChan := make(chan struct{}) // 用于协程同步
+	sigCh := make(chan os.Signal)    // 接收系统信号
 	// 使用sigCh监听操作系统的信号
 	signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	// 为每一个连接开启一个协程，监听系统信号
@@ -35,32 +31,53 @@ func ListenAndServe(cfg *Config, handler tcp.Handler) {
 		sig := <-sigCh
 		switch sig {
 		case syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT:
-			logger.Info("shuting down...")
-			closing.Set(true)
-			listener.Close()
+			closeChan <- struct{}{}
 		}
 	}()
 
-	// 监听端口
-	logger.Info(fmt.Sprintf("bind: %s, starting listening...", cfg.Address))
-	// 作关闭操作。需要先关闭listener，再关闭handler
-	// defer 后进先出执行
-	defer handler.Close()
-	defer listener.Close()
+	listener, err := net.Listen("tcp", cfg.Address)
+	if err != nil {
+		log.Fatal(err)
+	}
+	logger.Info(fmt.Sprintf("bind: %s, start listening...", cfg.Address))
+	ListenAndServe(listener, handler, closeChan)
+	return nil
+}
 
-	// 创建一个带有取消函数chancel的上下文context
-	ctx, _ := context.WithCancel(context.Background())
+// ListenAndServe 监听端口，同时监听系统中断信号
+func ListenAndServe(listener net.Listener, handler tcp.Handler, closeChan chan struct{}) {
+	// 监听信号
+	go func() {
+		<-closeChan
+		logger.Info("shutting down....")
+		_ = listener.Close()
+		_ = handler.Close()
+	}()
+
+	// 监听端口
+	defer func() {
+		// 遇到未明错误而中断连接
+		_ = listener.Close()
+		_ = handler.Close()
+	}()
+
+	ctx := context.Background()
+	var wait sync.WaitGroup // 实现多个协程并发执行
 	for {
+		// 接收请求
 		conn, err := listener.Accept()
 		if err != nil {
-			if closing.Get() {
-				return // 直接退出
-			}
-			logger.Error(fmt.Sprintf("accept err: %v", err))
-			continue
+			logger.Fatal(err)
+			break
 		}
 
+		// handle
 		logger.Info("accept link")
-		go handler.Handle(ctx, conn)
+		wait.Add(1)
+		go func() {
+			defer wait.Done()
+			handler.Handle(ctx, conn)
+		}()
 	}
+	wait.Wait() // 等待所有协程返回
 }

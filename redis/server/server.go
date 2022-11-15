@@ -1,7 +1,8 @@
 package server
 
 import (
-	DBImpl "Godis/database"
+	"Godis/config"
+	databaseImpl "Godis/database"
 	"Godis/interface/database"
 	"Godis/lib/logger"
 	"Godis/lib/sync/atomic"
@@ -31,14 +32,22 @@ type Handler struct {
 }
 
 func MakeHandler() *Handler {
+	var db database.DB
+	if config.Properties.Self != "" ||
+		len(config.Properties.Peers) != 0 {
+		// TODO cluster 集群模式
+	} else {
+		db = databaseImpl.NewStandaloneServer()
+	}
 	return &Handler{
-		db: DBImpl.MakeDB(),
+		db: db,
 	}
 }
 
 func (h *Handler) closeClient(client *connection.Connection) {
 	_ = client.Close()
-
+	// TODO DB
+	h.activeConn.Delete(client)
 }
 
 // Handle 接收并处理redis命令
