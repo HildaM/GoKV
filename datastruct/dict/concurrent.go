@@ -78,10 +78,16 @@ const HASH_BITS = 0x7fffffff // usable bits of normal node hash
 
 // TODO 未验证是否正确
 func (dict *ConcurrentDict) spread(hashCode uint32) uint32 {
+	//if dict == nil {
+	//	panic("dict is nil")
+	//}
+	//return (hashCode ^ (hashCode >> 16)) & HASH_BITS
+
 	if dict == nil {
 		panic("dict is nil")
 	}
-	return (hashCode ^ (hashCode >> 16)) & HASH_BITS
+	tableSize := uint32(len(dict.table))
+	return (tableSize - 1) & uint32(hashCode)
 }
 
 func (dict *ConcurrentDict) getShard(key uint32) *shard {
@@ -150,7 +156,7 @@ func (dict *ConcurrentDict) PutIfAbsent(key string, val interface{}) (result int
 	defer shard.mutex.Unlock()
 
 	if _, ok := shard.m[key]; ok {
-		result = 0
+		return 0
 	}
 	shard.m[key] = val
 	dict.addCount()
