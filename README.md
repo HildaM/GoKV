@@ -1,8 +1,14 @@
-# Redis KV存储实现
-实现Redis的数据存储功能
-原作者博客资料：[Golang 实现 Redis(3): 实现内存数据库](https://www.cnblogs.com/Finley/p/12590718.html)
+# Godis
+## 简介
+使用golang实现的简易redis
 
-## 分支主要实现
-1. 参考concurrentHashMap的实现，实现并发安全的redis dict数据结构
-2. LockMap数据结构，对操作多个key的并发安全问题处理，确保同时操作多个key的时候的并发安全
-3. 实现数据库操作接口，让KV项目正确运作起来
+学习于 Godis 项目，主要分分支将Godis进行重构，每个分支代表一个主要特性
+
+## 进度
+1. 01_tcp_server：实现redis最基础的tcp服务（22.11.08）
+2. 02_redis_protocol_parser：实现redis数据解析协议（22.11.11）。该分支代码能够正常连接redis客户端，但是不能存储数据，因为没有实现内存数据库
+3. 03_database：实现redis基本数据库框架。当前只实现了简单的ping命令作为测试，之后将加入更多redis命令
+
+## 使用方法
+目前仅支持telnet访问：`telnet 127.0.0.1 6399`
+之后将支持使用redis-cli访问
