@@ -75,7 +75,9 @@ func ListenAndServe(listener net.Listener, handler tcp.Handler, closeChan chan s
 		logger.Info("accept link")
 		wait.Add(1)
 		go func() {
-			defer wait.Done()
+			defer func() {
+				wait.Done()
+			}()
 			handler.Handle(ctx, conn)
 		}()
 	}

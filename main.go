@@ -51,7 +51,7 @@ func main() {
 	}
 
 	err := tcp.ListenAndServerWithSignal(&tcp.Config{
-		Address: fmt.Sprintf("%s:$d", config.Properties.Bind, config.Properties.Port),
+		Address: fmt.Sprintf("%s:%d", config.Properties.Bind, config.Properties.Port),
 	}, server.MakeHandler())
 	if err != nil {
 		logger.Fatal(err)

@@ -26,6 +26,13 @@ func (r *ArgNumErrReply) Error() string {
 	return "ERR wrong number of arguments for '" + r.Cmd + "' command"
 }
 
+// MakeArgNumErrReply represents wrong number of arguments for command
+func MakeArgNumErrReply(cmd string) *ArgNumErrReply {
+	return &ArgNumErrReply{
+		Cmd: cmd,
+	}
+}
+
 // SyntaxErr
 type SyntaxErrReply struct{}
 
@@ -53,7 +60,6 @@ func (r *WrongTypeErrReply) Error() string {
 }
 
 // ProtocolErr
-
 type ProtocolErrReply struct {
 	Msg string
 }
