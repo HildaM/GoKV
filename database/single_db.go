@@ -101,6 +101,11 @@ func (db *DB) execNormalCommand(cmdLine [][]byte) redis.Reply {
 		return protocol.MakeErrReply("ERR unknown command '" + cmdName + "'")
 	}
 
+	// 检查命令参数是否正确
+	if !validateArity(cmd.arity, cmdLine) {
+		return protocol.MakeArgNumErrReply(cmdName)
+	}
+
 	// 2. 命令预处理
 	prepare := cmd.prepare
 	write, read := prepare(cmdLine[1:])
@@ -115,16 +120,22 @@ func (db *DB) execNormalCommand(cmdLine [][]byte) redis.Reply {
 	return fun(db, cmdLine[1:])
 }
 
+// validateArity 检查参数是否正确
+// 正数表示必须达到的参数数目，负数表示至少达到的参数数目
+func validateArity(arity int, cmdArgs [][]byte) bool {
+	argNum := len(cmdArgs)
+	if arity >= 0 {
+		return argNum == arity
+	}
+	return argNum >= -arity
+}
+
 func EnqueueCmd(c redis.Connection, line [][]byte) redis.Reply {
 	return nil
 }
 
 func Watch(db *DB, c redis.Connection, i [][]byte) redis.Reply {
 	return nil
-}
-
-func validateArity(i int, line [][]byte) bool {
-	return true
 }
 
 func execMulti(db *DB, c redis.Connection) redis.Reply {

@@ -37,6 +37,12 @@ func MakeArgNumErrReply(cmd string) *ArgNumErrReply {
 type SyntaxErrReply struct{}
 
 var syntaxErrBytes = []byte("-Err syntax error\r\n")
+var theSyntaxErrReply = &SyntaxErrReply{}
+
+// MakeSyntaxErrReply creates syntax error
+func MakeSyntaxErrReply() *SyntaxErrReply {
+	return theSyntaxErrReply
+}
 
 func (r *SyntaxErrReply) ToBytes() []byte {
 	return syntaxErrBytes
