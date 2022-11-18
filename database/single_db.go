@@ -3,9 +3,11 @@ package database
 import (
 	"Godis/datastruct/dict"
 	"Godis/datastruct/lock"
+	"Godis/interface/database"
 	"Godis/interface/redis"
 	"Godis/redis/protocol"
 	"strings"
+	"time"
 )
 
 const (
@@ -137,7 +139,7 @@ func StartMulti(c redis.Connection) redis.Reply {
 	return nil
 }
 
-/* ------- 数据库并发控制 --------- */
+/* ------- 数据库操作 --------- */
 
 // RWLocks 对读写key上锁
 func (db *DB) RWLocks(write []string, read []string) {
@@ -147,6 +149,42 @@ func (db *DB) RWLocks(write []string, read []string) {
 // RWULocks 解锁
 func (db *DB) RWULocks(writer []string, read []string) {
 	db.locker.RWUnLocks(writer, read)
+}
+
+// GetDataEnity 返回指定key的数据实例
+func (db *DB) GetEntity(key string) (*database.DataEntity, bool) {
+	val, ok := db.data.Get(key)
+	if !ok {
+		return nil, false
+	}
+
+	if db.IsExpired(key) {
+		return nil, false
+	}
+	entity, _ := val.(*database.DataEntity)
+	return entity, true
+}
+
+// PutEntity a DataEntity into DB
+func (db *DB) PutEntity(key string, entity *database.DataEntity) int {
+	return db.data.Put(key, entity)
+}
+
+// PutIfExists edit an existing DataEntity
+func (db *DB) PutIfExists(key string, entity *database.DataEntity) int {
+	return db.data.PutIfExists(key, entity)
+}
+
+// PutIfAbsent insert an DataEntity only if the key not exists
+func (db *DB) PutIfAbsent(key string, entity *database.DataEntity) int {
+	return db.data.PutIfAbsent(key, entity)
+}
+
+// Remove 移除指定key
+func (db *DB) Remove(key string) {
+	db.data.Remove(key)
+	db.ttlMap.Remove(key)
+	// TODO 原子事务实现
 }
 
 /* ------- redis键值对版本控制 --------- */
@@ -169,4 +207,36 @@ func (db *DB) GetVersion(key string) uint32 {
 	return version.(uint32)
 }
 
-/* ------- 数据操作接口--------- */
+/* ------- TTL功能 --------- */
+
+// IsExpired 判断当前key是否过期
+func (db *DB) IsExpired(key string) bool {
+	rawExpiredTime, ok := db.ttlMap.Get(key)
+	if !ok {
+		return false
+	}
+
+	expiredTime := rawExpiredTime.(time.Time)
+	expired := time.Now().After(expiredTime)
+	if expired {
+		db.Remove(key)
+	}
+	return expired
+}
+
+// Expire 设置过期时间
+func (db *DB) Expire(key string, expired time.Time) {
+	db.ttlMap.Put(key, expired)
+	// TODO 事务处理
+}
+
+// Persist 取消key的过期时间
+func (db *DB) Persist(key string) {
+	db.ttlMap.Remove(key)
+	// TODO 事务处理
+}
+
+// genExpireTask
+func genExpireTask(key string) string {
+	return "expire:" + key
+}

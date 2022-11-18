@@ -144,9 +144,9 @@ func (locks *Locks) RWLocks(writeKeys []string, readKeys []string) {
 	for _, index := range sortedIndexs {
 		if _, ok := writeIndexs[index]; ok {
 			// 如果是写锁，则加独享锁
-			locks.table[index].RLock()
-		} else {
 			locks.table[index].Lock()
+		} else {
+			locks.table[index].RLock()
 		}
 	}
 }
