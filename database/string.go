@@ -45,10 +45,17 @@ func execSet(db *DB, args [][]byte) redis.Reply {
 		if ttl != unlimitedTTL {
 			expired := time.Now().Add(time.Duration(ttl) * time.Millisecond)
 			db.Expire(key, expired)
-			// TODO AOF持久化
+			// AOF持久化
+			db.addAof(CmdLine{
+				[]byte("SET"),
+				args[0],
+				args[1],
+			})
+			db.addAof(aof.MakeExpireCmd(key, expired).Args)
 		} else {
 			db.Persist(key)
-			// TODO AOF持久化
+			// AOF持久化
+			db.addAof(utils.ToCmdLine3("set", args...))
 		}
 	}
 

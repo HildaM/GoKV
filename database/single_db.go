@@ -30,7 +30,8 @@ type DB struct {
 	// 某些复杂操作下，需要对多个key上锁，例如（rpush、incr...）
 	locker *lock.Locks
 
-	// TODO aof持久化
+	// aof
+	addAof func(CmdLine)
 }
 
 // ExecFunc is interface for command executor

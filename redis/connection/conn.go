@@ -2,6 +2,7 @@ package connection
 
 import (
 	"Godis/lib/sync/wait"
+	"bytes"
 	"net"
 	"sync"
 	"time"
@@ -73,4 +74,27 @@ func (c *Connection) SelectDB(idx int) {
 
 func (c *Connection) GetDBIndex() int {
 	return c.selectedDB
+}
+
+// TEST：测试用
+// FakeConn implements redis.Connection for test
+type FakeConn struct {
+	Connection
+	buf bytes.Buffer
+}
+
+// Write writes data to buffer
+func (c *FakeConn) Write(b []byte) error {
+	c.buf.Write(b)
+	return nil
+}
+
+// Clean resets the buffer
+func (c *FakeConn) Clean() {
+	c.buf.Reset()
+}
+
+// Bytes returns written data
+func (c *FakeConn) Bytes() []byte {
+	return c.buf.Bytes()
 }
