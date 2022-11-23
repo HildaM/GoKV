@@ -1,7 +1,9 @@
 package database
 
 import (
+	"Godis/aof"
 	"Godis/config"
+	"Godis/interface/database"
 	"Godis/interface/redis"
 	"Godis/lib/logger"
 	"Godis/redis/protocol"
@@ -18,8 +20,9 @@ type MultiDB struct {
 	// TODO
 	// handle publish/subscribe
 	// hub *pubsub.Hub
+
 	// handle aof persistence
-	// aofHandler *aof.Handler
+	aofHandler *aof.Handler
 
 	// store master node address
 	//slaveOf     string
@@ -106,7 +109,44 @@ func NewStandaloneServer() *MultiDB {
 		mdb.dbSet[i] = holder
 	}
 
-	// TODO AOF持久化存储、发布订阅、RDB持久化
+	// 3. 初始化AOF相关参数
+	validAOF := false
+	if config.Properties.AppendOnly {
+		aofHandler, err := aof.NewAOFHandler(mdb, func() database.EmbedDB {
+			return MakeBasicMultiDB()
+		})
+		if err != nil {
+			panic(err)
+		}
+		mdb.aofHandler = aofHandler
 
+		// 为每个子数据库配置aof相关内容
+		for _, db := range mdb.dbSet {
+			singleDB := db.Load().(*DB)
+			singleDB.addAof = func(line CmdLine) {
+				mdb.aofHandler.AddAof(singleDB.index, line)
+			}
+		}
+
+		validAOF = true
+	}
+
+	// 4. RDB持久化
+	if config.Properties.RDBFilename != "" && !validAOF {
+		// TODO
+	}
+
+	return mdb
+}
+
+// MakeBasicMultiDB 此数据库仅仅用于aof重写时的备份，或者其他需求。不是主数据库
+func MakeBasicMultiDB() database.EmbedDB {
+	mdb := &MultiDB{}
+	mdb.dbSet = make([]*atomic.Value, config.Properties.Databases)
+	for i := range mdb.dbSet {
+		holder := &atomic.Value{}
+		holder.Store(makeBasicDB())
+		mdb.dbSet[i] = holder
+	}
 	return mdb
 }

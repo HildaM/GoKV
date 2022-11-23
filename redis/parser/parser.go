@@ -49,6 +49,7 @@ func parse0(rawReader io.Reader, ch chan<- *Payload) {
 		}
 
 		line = bytes.TrimSuffix(line, []byte{'\r', '\n'})
+
 		// 根据命令的不同前缀处理
 		switch line[0] {
 		case '+':
@@ -136,7 +137,7 @@ func parseArray(header []byte, reader *bufio.Reader, ch chan<- *Payload) error {
 			if err != nil {
 				return err
 			}
-			bodys = append(bodys, body)
+			bodys = append(bodys, body[:len(body)-2]) // 减去CRLF
 		}
 	}
 

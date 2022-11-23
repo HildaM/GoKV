@@ -55,7 +55,18 @@ func MakeDB() *DB {
 		ttlMap:     dict.MakeConcurrent(ttlDictSize),
 		versionMap: dict.MakeConcurrent(dataDictSize),
 		locker:     lock.Make(lockerSize),
-		// TODO aof参数初始化
+		addAof:     func(line CmdLine) {},
+	}
+}
+
+// makeBasicDB 创建一个功能简陋的db，没有并发安全保证
+func makeBasicDB() *DB {
+	return &DB{
+		data:       dict.MakeSimple(),
+		ttlMap:     dict.MakeSimple(),
+		versionMap: dict.MakeSimple(),
+		locker:     lock.Make(1),
+		addAof:     func(line CmdLine) {},
 	}
 }
 

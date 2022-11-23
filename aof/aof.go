@@ -4,6 +4,7 @@ import (
 	"Godis/config"
 	"Godis/interface/database"
 	"Godis/lib/logger"
+	"Godis/lib/utils"
 	"Godis/redis/connection"
 	"Godis/redis/parser"
 	"Godis/redis/protocol"
@@ -64,9 +65,20 @@ func NewAOFHandler(db database.EmbedDB, tmpDBMaker func() database.EmbedDB) (*Ha
 	return handler, nil
 }
 
+// AddAof 向处理aof的协程发送消息，将命令加入到aof文件中
+func (handler *Handler) AddAof(dbIndex int, cmdline CmdLine) {
+	// 先判断是否可以加入
+	if config.Properties.AppendOnly && handler.aofChan != nil {
+		handler.aofChan <- &payLoad{
+			cmdLine: cmdline,
+			dbIndex: dbIndex,
+		}
+	}
+}
+
 // LoadAOF 加载aof文件
 func (handler *Handler) LoadAOF(maxBytes int) {
-	// delete aofChan to prevent write again
+	// 加载aof文件时，需要暂时将aofChan关闭，避免重复写入
 	aofChan := handler.aofChan
 	handler.aofChan = nil
 	// 完成aof加载后，需要将原本被删除的aofChan管道重新初始化，避免之后aof无法正常使用

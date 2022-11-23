@@ -131,7 +131,7 @@ func (locks *Locks) RUnLocks(keys ...string) {
 // RWLocks 同时对读写锁进行加锁
 func (locks *Locks) RWLocks(writeKeys []string, readKeys []string) {
 	keys := append(writeKeys, readKeys...)
-	sortedIndexs := locks.toLockIndices(keys, false)
+	sortedIndexs := locks.toLockIndices(keys, false) // 加锁升序
 
 	// 需要区分读写锁
 	writeIndexs := make(map[uint32]struct{})
@@ -154,7 +154,7 @@ func (locks *Locks) RWLocks(writeKeys []string, readKeys []string) {
 // RWUnLocks unlocks write keys and read keys together. allow duplicate keys
 func (locks *Locks) RWUnLocks(writeKeys []string, readKeys []string) {
 	keys := append(writeKeys, readKeys...)
-	indices := locks.toLockIndices(keys, true)
+	indices := locks.toLockIndices(keys, true) // 解锁时逆序，不能设置为false，否则和加锁时的顺序不一致
 
 	writeIndexSet := make(map[uint32]struct{})
 	for _, wKey := range writeKeys {

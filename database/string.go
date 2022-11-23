@@ -1,8 +1,10 @@
 package database
 
 import (
+	"Godis/aof"
 	"Godis/interface/database"
 	"Godis/interface/redis"
+	"Godis/lib/utils"
 	"Godis/redis/protocol"
 	"strconv"
 	"time"
@@ -72,8 +74,9 @@ func execSetNX(db *DB, args [][]byte) redis.Reply {
 	entity := &database.DataEntity{Data: value}
 
 	result := db.PutIfAbsent(key, entity)
-	// TODO AOF持久化
-
+	if result != 0 {
+		db.addAof(utils.ToCmdLine3("setnx", args...))
+	}
 	return protocol.MakeIntReply(int64(result))
 }
 
@@ -96,7 +99,9 @@ func execSetEX(db *DB, args [][]byte) redis.Reply {
 	expiredTime := time.Now().Add(time.Duration(ttlTime) * time.Millisecond)
 	db.Expire(key, expiredTime)
 
-	// TODO AOF持久化
+	// AOF持久化
+	db.addAof(utils.ToCmdLine3("setex", args...))
+	db.addAof(aof.MakeExpireCmd(key, expiredTime).Args)
 
 	return &protocol.OkReply{}
 }
@@ -122,7 +127,9 @@ func execPSetEX(db *DB, args [][]byte) redis.Reply {
 	expireTime := time.Now().Add(time.Duration(ttlArg) * time.Millisecond)
 	db.Expire(key, expireTime)
 
-	// TODO AOF持久化
+	// AOF持久化
+	db.addAof(utils.ToCmdLine3("setex", args...))
+	db.addAof(aof.MakeExpireCmd(key, expireTime).Args)
 
 	return &protocol.OkReply{}
 }
@@ -140,7 +147,8 @@ func execMSet(db *DB, args [][]byte) redis.Reply {
 		db.PutEntity(key, &database.DataEntity{Data: value})
 	}
 
-	// TODO AOF持久化
+	// AOF持久化
+	db.addAof(utils.ToCmdLine3("mset", args...))
 
 	return &protocol.OkReply{}
 }
@@ -186,7 +194,8 @@ func execMSetNX(db *DB, args [][]byte) redis.Reply {
 		db.PutEntity(key, &database.DataEntity{Data: values[i]})
 	}
 
-	// TODO AOF持久化
+	// AOF持久化
+	db.addAof(utils.ToCmdLine3("msetnx", args...))
 
 	return protocol.MakeIntReply(1)
 }
