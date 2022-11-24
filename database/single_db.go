@@ -210,6 +210,24 @@ func (db *DB) Remove(key string) {
 	// TODO 原子事务实现
 }
 
+// ForEach 遍历数据库，并将数据使用cb函数处理
+func (db *DB) ForEach(cb func(key string, data *database.DataEntity, expiration *time.Time) bool) {
+	// 调用data自身的foreach遍历
+	db.data.ForEach(func(key string, raw interface{}) bool {
+		// 将遍历出来的interface转换为DataEntity
+		entity, _ := raw.(*database.DataEntity)
+		// 获取ttlMap中的过期时间
+		var expirationTime *time.Time
+		rawExpiredTime, ok := db.ttlMap.Get(key)
+		if ok {
+			expireTime := rawExpiredTime.(time.Time)
+			expirationTime = &expireTime
+		}
+		// 将遍历出来的数据，使用cb函数处理
+		return cb(key, entity, expirationTime)
+	})
+}
+
 /* ------- redis键值对版本控制 --------- */
 
 // addVersion 版本号自增

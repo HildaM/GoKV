@@ -2,6 +2,7 @@ package database
 
 import (
 	"Godis/interface/redis"
+	"time"
 )
 
 // CmdLine is alias for [][]byte, represents a command line
@@ -20,7 +21,7 @@ type EmbedDB interface {
 	//ExecWithLock(conn redis.Connection, cmdLine [][]byte) redis.Reply
 	//ExecMulti(conn redis.Connection, watching map[string]uint32, cmdLines []CmdLine) redis.Reply
 	//GetUndoLogs(dbIndex int, cmdLine [][]byte) []CmdLine
-	//ForEach(dbIndex int, cb func(key string, data *DataEntity, expiration *time.Time) bool)
+	ForEach(dbIndex int, cb func(key string, data *DataEntity, expiration *time.Time) bool)
 	//RWLocks(dbIndex int, writeKeys []string, readKeys []string)
 	//RWUnLocks(dbIndex int, writeKeys []string, readKeys []string)
 	//GetDBSize(dbIndex int) (int, int)

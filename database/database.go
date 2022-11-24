@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync/atomic"
+	"time"
 )
 
 // MultiDB is a set of multiple database set
@@ -53,7 +54,10 @@ func (mdb *MultiDB) Exec(client redis.Connection, cmdLine [][]byte) (result redi
 
 	// TODO 2. 集群命令
 
-	// TODO 3. 无法在集群模式下执行的特殊命令
+	// 3. 无法在集群模式下执行的特殊命令
+	if cmdName == "rewriteaof" {
+		return RewriteAOF(mdb, cmdLine[1:])
+	}
 
 	// 4. 普通命令
 	dbIndex := client.GetDBIndex()
@@ -149,4 +153,27 @@ func MakeBasicMultiDB() database.EmbedDB {
 		mdb.dbSet[i] = holder
 	}
 	return mdb
+}
+
+// ForEach traverses all the keys in the given database
+func (mdb *MultiDB) ForEach(dbIndex int, cb func(key string, data *database.DataEntity, expiration *time.Time) bool) {
+	mdb.mustSelectDB(dbIndex).ForEach(cb)
+}
+
+// mustSelectDB 必须成功选择一个db，否则panic
+func (mdb *MultiDB) mustSelectDB(index int) *DB {
+	selectDB, err := mdb.SelectDB(index)
+	if err != nil {
+		panic(err)
+	}
+	return selectDB
+}
+
+// RewriteAOF 启动aof重写
+func RewriteAOF(db *MultiDB, args [][]byte) redis.Reply {
+	err := db.aofHandler.Rewrite()
+	if err != nil {
+		return protocol.MakeErrReply(err.Error())
+	}
+	return protocol.MakeOkReply()
 }

@@ -1,10 +1,27 @@
 package aof
 
 import (
+	"Godis/interface/database"
 	"Godis/redis/protocol"
 	"strconv"
 	"time"
 )
+
+// EntityToCmd 序列化一个数据库实例为redis命令
+func EntityToCmd(key string, entity *database.DataEntity) *protocol.MultiBulkReply {
+	if entity == nil {
+		return nil
+	}
+
+	var cmd *protocol.MultiBulkReply
+	switch val := entity.Data.(type) {
+	case []byte:
+		cmd = stringToCmd(key, val)
+		// TODO 支持更多格式
+	}
+
+	return cmd
+}
 
 // Set 命令
 var setCmd = []byte("SET")
