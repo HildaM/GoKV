@@ -1,8 +1,8 @@
 package database
 
 import (
-	"Godis/interface/redis"
-	"Godis/redis/protocol"
+	"github.com/HildaM/GoKV/interface/redis"
+	"github.com/HildaM/GoKV/redis/protocol"
 )
 
 /*

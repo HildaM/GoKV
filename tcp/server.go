@@ -1,10 +1,10 @@
 package tcp
 
 import (
-	"Godis/interface/tcp"
-	"Godis/lib/logger"
 	"context"
 	"fmt"
+	"github.com/HildaM/GoKV/interface/tcp"
+	"github.com/HildaM/GoKV/lib/logger"
 	"log"
 	"net"
 	"os"

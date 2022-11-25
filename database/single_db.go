@@ -1,11 +1,11 @@
 package database
 
 import (
-	"Godis/datastruct/dict"
-	"Godis/datastruct/lock"
-	"Godis/interface/database"
-	"Godis/interface/redis"
-	"Godis/redis/protocol"
+	"github.com/HildaM/GoKV/datastruct/dict"
+	"github.com/HildaM/GoKV/datastruct/lock"
+	"github.com/HildaM/GoKV/interface/database"
+	"github.com/HildaM/GoKV/interface/redis"
+	"github.com/HildaM/GoKV/redis/protocol"
 	"strings"
 	"time"
 )

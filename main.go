@@ -1,11 +1,11 @@
 package main
 
 import (
-	"Godis/config"
-	"Godis/lib/logger"
-	"Godis/redis/server"
-	"Godis/tcp"
 	"fmt"
+	"github.com/HildaM/GoKV/config"
+	"github.com/HildaM/GoKV/lib/logger"
+	"github.com/HildaM/GoKV/redis/server"
+	"github.com/HildaM/GoKV/tcp"
 	"os"
 )
 

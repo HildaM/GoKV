@@ -1,8 +1,8 @@
 package connection
 
 import (
-	"Godis/lib/sync/wait"
 	"bytes"
+	"github.com/HildaM/GoKV/lib/sync/wait"
 	"net"
 	"sync"
 	"time"

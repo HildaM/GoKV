@@ -1,13 +1,13 @@
 package parser
 
 import (
-	"Godis/interface/redis"
-	"Godis/lib/logger"
-	"Godis/redis/protocol"
 	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/HildaM/GoKV/interface/redis"
+	"github.com/HildaM/GoKV/lib/logger"
+	"github.com/HildaM/GoKV/redis/protocol"
 	"io"
 	"runtime/debug"
 	"strconv"

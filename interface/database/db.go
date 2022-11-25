@@ -1,7 +1,7 @@
 package database
 
 import (
-	"Godis/interface/redis"
+	"github.com/HildaM/GoKV/interface/redis"
 	"time"
 )
 

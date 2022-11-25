@@ -1,15 +1,15 @@
 package server
 
 import (
-	"Godis/config"
-	databaseImpl "Godis/database"
-	"Godis/interface/database"
-	"Godis/lib/logger"
-	"Godis/lib/sync/atomic"
-	"Godis/redis/connection"
-	"Godis/redis/parser"
-	"Godis/redis/protocol"
 	"context"
+	"github.com/HildaM/GoKV/config"
+	databaseImpl "github.com/HildaM/GoKV/database"
+	"github.com/HildaM/GoKV/interface/database"
+	"github.com/HildaM/GoKV/lib/logger"
+	"github.com/HildaM/GoKV/lib/sync/atomic"
+	"github.com/HildaM/GoKV/redis/connection"
+	"github.com/HildaM/GoKV/redis/parser"
+	"github.com/HildaM/GoKV/redis/protocol"
 	"io"
 	"net"
 	"strings"

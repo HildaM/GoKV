@@ -1,8 +1,8 @@
 package aof
 
 import (
-	"Godis/interface/database"
-	"Godis/redis/protocol"
+	"github.com/HildaM/GoKV/interface/database"
+	"github.com/HildaM/GoKV/redis/protocol"
 	"strconv"
 	"time"
 )

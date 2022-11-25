@@ -1,13 +1,13 @@
 package database
 
 import (
-	"Godis/aof"
-	"Godis/config"
-	"Godis/interface/database"
-	"Godis/interface/redis"
-	"Godis/lib/logger"
-	"Godis/redis/protocol"
 	"fmt"
+	"github.com/HildaM/GoKV/aof"
+	"github.com/HildaM/GoKV/config"
+	"github.com/HildaM/GoKV/interface/database"
+	"github.com/HildaM/GoKV/interface/redis"
+	"github.com/HildaM/GoKV/lib/logger"
+	"github.com/HildaM/GoKV/redis/protocol"
 	"runtime/debug"
 	"strings"
 	"sync/atomic"

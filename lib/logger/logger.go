@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"Godis/lib/files"
 	"fmt"
+	"github.com/HildaM/GoKV/lib/files"
 	"io"
 	"log"
 	"os"

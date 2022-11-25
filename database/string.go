@@ -1,11 +1,11 @@
 package database
 
 import (
-	"Godis/aof"
-	"Godis/interface/database"
-	"Godis/interface/redis"
-	"Godis/lib/utils"
-	"Godis/redis/protocol"
+	"github.com/HildaM/GoKV/aof"
+	"github.com/HildaM/GoKV/interface/database"
+	"github.com/HildaM/GoKV/interface/redis"
+	"github.com/HildaM/GoKV/lib/utils"
+	"github.com/HildaM/GoKV/redis/protocol"
 	"strconv"
 	"time"
 )

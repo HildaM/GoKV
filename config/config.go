@@ -1,8 +1,8 @@
 package config
 
 import (
-	"Godis/lib/logger"
 	"bufio"
+	"github.com/HildaM/GoKV/lib/logger"
 	"io"
 	"os"
 	"reflect"

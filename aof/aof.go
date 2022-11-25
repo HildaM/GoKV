@@ -1,13 +1,13 @@
 package aof
 
 import (
-	"Godis/config"
-	"Godis/interface/database"
-	"Godis/lib/logger"
-	"Godis/lib/utils"
-	"Godis/redis/connection"
-	"Godis/redis/parser"
-	"Godis/redis/protocol"
+	"github.com/HildaM/GoKV/config"
+	"github.com/HildaM/GoKV/interface/database"
+	"github.com/HildaM/GoKV/lib/logger"
+	"github.com/HildaM/GoKV/lib/utils"
+	"github.com/HildaM/GoKV/redis/connection"
+	"github.com/HildaM/GoKV/redis/parser"
+	"github.com/HildaM/GoKV/redis/protocol"
 	"io"
 	"os"
 	"strconv"

@@ -1,11 +1,11 @@
 package tcp
 
 import (
-	"Godis/lib/logger"
-	"Godis/lib/sync/atomic"
-	"Godis/lib/sync/wait"
 	"bufio"
 	"context"
+	"github.com/HildaM/GoKV/lib/logger"
+	"github.com/HildaM/GoKV/lib/sync/atomic"
+	"github.com/HildaM/GoKV/lib/sync/wait"
 	"io"
 	"net"
 	"sync"
