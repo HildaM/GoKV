@@ -35,6 +35,7 @@ func parse0(rawReader io.Reader, ch chan<- *Payload) {
 
 	reader := bufio.NewReader(rawReader)
 	for {
+		// 获取命令长度数据
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			ch <- &Payload{Err: err}
@@ -117,6 +118,7 @@ func parseArray(header []byte, reader *bufio.Reader, ch chan<- *Payload) error {
 		if err != nil {
 			return nil
 		}
+
 		length := len(line)
 		if length < 4 || line[length-2] != '\r' || line[0] != '$' {
 			// $(num)CRLF：最低长度为4
@@ -133,7 +135,7 @@ func parseArray(header []byte, reader *bufio.Reader, ch chan<- *Payload) error {
 			bodys = append(bodys, []byte{})
 		} else {
 			body := make([]byte, strLen+2)
-			_, err = io.ReadFull(reader, body)
+			_, err = io.ReadFull(reader, body) // 读取 $num 后面的真实命令
 			if err != nil {
 				return err
 			}

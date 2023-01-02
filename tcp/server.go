@@ -46,7 +46,7 @@ func ListenAndServerWithSignal(cfg *Config, handler tcp.Handler) error {
 
 // ListenAndServe 监听端口，同时监听系统中断信号
 func ListenAndServe(listener net.Listener, handler tcp.Handler, closeChan chan struct{}) {
-	// 监听信号
+	// 监听关闭信号
 	go func() {
 		<-closeChan
 		logger.Info("shutting down....")

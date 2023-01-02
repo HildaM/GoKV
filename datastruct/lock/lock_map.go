@@ -110,10 +110,10 @@ func (locks *Locks) RLocks(keys ...string) {
 	}
 }
 
-// UnLocks 按顺序解锁一组keys
+// UnLocks 逆序解锁一组keys
 // keys可以接收单个string，UnLocks方法相比于之前的UnLock方法更为安全，能避免死锁的发送
 func (locks *Locks) UnLocks(keys ...string) {
-	sortedIndexs := locks.toLockIndices(keys, false)
+	sortedIndexs := locks.toLockIndices(keys, true)
 	for _, index := range sortedIndexs {
 		locks.table[index].Unlock()
 	}
