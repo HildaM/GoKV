@@ -3,6 +3,7 @@ package sortedset
 import (
 	"math/bits"
 	"math/rand"
+	"time"
 )
 
 const (
@@ -55,6 +56,25 @@ func makeSkiplist() *skiplist {
 		level:  1,
 		header: makeNode(maxLevel, 0, ""),
 	}
+}
+
+// getRank 获取指定值的rank(在当前跳表中的排序位置)
+func (skiplist *skiplist) getRank(member string, score float64) int64 {
+	var rank int64 = 0
+	node := skiplist.header
+	for i := skiplist.level - 1; i >= 0; i-- {
+		for node.level[i].forward != nil &&
+			(node.level[i].forward.Score < score ||
+				(node.level[i].forward.Score == score && node.level[i].forward.Member < member)) {
+			rank += node.level[i].span
+			node = node.level[i].forward
+		}
+
+		if node.Member == member {
+			return rank
+		}
+	}
+	return 0
 }
 
 // getByRank 跳表查找元素
@@ -174,7 +194,7 @@ func (skiplist *skiplist) insert(member string, score float64) *node {
 		update[i] = node // 记录当前层的先驱节点
 	}
 
-	level := randomLevel() // 随机决定新节点有多少层
+	level := randomLevel_new() // 随机决定新节点有多少层
 	// 如果新level大于原本的层数，则需要创建新层
 	if level > skiplist.level {
 		for i := skiplist.level; i < level; i++ {
@@ -221,6 +241,7 @@ func (skiplist *skiplist) insert(member string, score float64) *node {
 }
 
 // randomLevel 随机生成索引层数
+// 三种方法中随机效果最好的
 func randomLevel_new() int16 {
 	total := uint64(1)<<uint64(maxLevel) - 1
 	k := rand.Uint64() % total
@@ -237,6 +258,22 @@ func randomLevel() int16 {
 		return level
 	}
 	return maxLevel
+}
+
+func carl_RandomLevel() int16 {
+	rand.Seed(time.Now().UnixNano()) // 随机数种子
+
+	var k int16 = 1
+	for (rand.Int() % 2) != 0 {
+		k++
+	}
+
+	// golang不支持三元运算符
+	if k < maxLevel {
+		return k
+	} else {
+		return maxLevel
+	}
 }
 
 // 删除节点 ---- 可能一次删除多个节点
@@ -277,6 +314,44 @@ func (skiplist *skiplist) RemoveRangeByRank(start int64, stop int64) (removed []
 	return removed
 }
 
+// RemoveRangeByScore 根据score删除节点
+func (skiplist *skiplist) RemoveRangeByScore(min, max *ScoreBorder, limit int) (removed []*Element) {
+	update := make([]*node, maxLevel)
+	removed = make([]*Element, 0)
+
+	// 1. 求出先驱节点
+	node := skiplist.header
+	for i := skiplist.level - 1; i >= 0; i-- {
+		for node.level[i].forward != nil {
+			if min.less(node.level[i].forward.Score) { // 当节点小于min边界时
+				break
+			}
+			node = node.level[i].forward
+		}
+		update[i] = node
+	}
+
+	// 2. 删除范围内的所有节点
+	node = node.level[0].forward
+	for node != nil {
+		if !max.greater(node.Score) { // Score >= max，越界
+			break
+		}
+		next := node.level[0].forward
+		removeElement := node.Element
+		removed = append(removed, &removeElement)
+		skiplist.removeNode(node, update)
+		// 如果达到删除的上限limit，则停止删除
+		if limit > 0 && len(removed) == limit {
+			break
+		}
+
+		node = next
+	}
+
+	return removed
+}
+
 // removeNode 删除单个节点
 func (skiplist *skiplist) removeNode(node *node, update []*node) {
 	for i := int16(0); i < skiplist.level; i++ {
@@ -304,4 +379,28 @@ func (skiplist *skiplist) removeNode(node *node, update []*node) {
 
 	// 节点总数减一
 	skiplist.length--
+}
+
+// remove 删除指定member、score的值
+func (skiplist *skiplist) remove(member string, score float64) bool {
+	// 1. 获取删除节点的先驱节点
+	update := make([]*node, maxLevel)
+	node := skiplist.header
+	for level := skiplist.level - 1; level >= 0; level-- {
+		for node.level[level].forward != nil &&
+			(node.level[level].forward.Score < score) || (node.level[level].forward.Score == score && node.level[level].forward.Member < member) {
+			node = node.level[level].forward
+		}
+
+		update[level] = node
+	}
+
+	// 2. 删除操作
+	node = node.level[0].forward
+	if node != nil && node.Score == score && node.Member == member {
+		skiplist.removeNode(node, update)
+		return true
+	}
+
+	return false
 }

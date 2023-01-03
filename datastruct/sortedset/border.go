@@ -19,7 +19,7 @@ type ScoreBorder struct {
 	Exclude bool
 }
 
-// 如果max.greater成立，则score在数值大的border上
+// if max.greater(score) then the score is within the upper border
 // do not use min.greater()
 func (border *ScoreBorder) greater(value float64) bool {
 	if border.Inf == negativeInf { // 负无穷
@@ -45,4 +45,12 @@ func (border *ScoreBorder) less(value float64) bool {
 		return border.Value < value
 	}
 	return border.Value <= value
+}
+
+var positiveInfBorder = &ScoreBorder{
+	Inf: positiveInf,
+}
+
+var negativeInfBorder = &ScoreBorder{
+	Inf: negativeInf,
 }
