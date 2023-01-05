@@ -17,7 +17,7 @@ func TestClient(t *testing.T) {
 	})
 
 	// 连接必须存在，可以用远程服务器的redis连接
-	client, err := MakeClient("120.25.153.110:6379")
+	client, err := MakeClient("IP:6379")
 	if err != nil {
 		t.Error(err)
 	}
@@ -26,7 +26,7 @@ func TestClient(t *testing.T) {
 	// 连接远程服务器，先进行认证
 	auth := client.Send([][]byte{
 		[]byte("auth"),
-		[]byte("austin"),
+		[]byte("password"),
 	})
 	if res, ok := auth.(*protocol.StatusReply); ok {
 		if res.Status != "OK" {
@@ -67,7 +67,7 @@ func TestReconnect(t *testing.T) {
 	})
 
 	// 连接必须存在，可以用远程服务器的redis连接
-	client, err := MakeClient("120.25.153.110:6379")
+	client, err := MakeClient("IP:6379")
 	if err != nil {
 		t.Error(err)
 	}
@@ -80,7 +80,7 @@ func TestReconnect(t *testing.T) {
 	// 连接远程服务器，先进行认证
 	_ = client.Send([][]byte{
 		[]byte("auth"),
-		[]byte("austin"),
+		[]byte("password"),
 	})
 
 	for i := 0; i < 3; i++ {
