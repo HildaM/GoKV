@@ -9,6 +9,7 @@ type Wait struct {
 	wg sync.WaitGroup
 }
 
+// WaitWithTimeout 等待响应处理成功或者超时
 func (w *Wait) WaitWithTimeout(duration time.Duration) bool {
 	c := make(chan bool)
 	go func() {
