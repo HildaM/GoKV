@@ -6,4 +6,4 @@ aof
 *.aof
 
 # 存在敏感信息
-/redis/client/client_test.go
+redis/client/client_test.go
