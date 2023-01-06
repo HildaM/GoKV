@@ -19,7 +19,9 @@ const (
 	created = iota
 	running
 	closed
+)
 
+const (
 	chanSize = 256
 	maxWait  = 3 * time.Second
 	retry    = 3 // 重试次数
