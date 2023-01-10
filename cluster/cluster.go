@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"fmt"
 	"github.com/HildaM/GoKV/config"
 	database2 "github.com/HildaM/GoKV/database"
 	"github.com/HildaM/GoKV/datastruct/dict"
@@ -8,9 +9,13 @@ import (
 	"github.com/HildaM/GoKV/interface/redis"
 	"github.com/HildaM/GoKV/lib/consistenthash"
 	"github.com/HildaM/GoKV/lib/idgenerator"
+	"github.com/HildaM/GoKV/lib/logger"
 	"github.com/HildaM/GoKV/lib/pool"
 	"github.com/HildaM/GoKV/lib/utils"
 	"github.com/HildaM/GoKV/redis/client"
+	"github.com/HildaM/GoKV/redis/protocol"
+	"runtime/debug"
+	"strings"
 )
 
 const (
@@ -61,7 +66,7 @@ func MakeCluster() *Cluster {
 	contains := make(map[string]struct{})
 	nodes := make([]string, 0, len(config.Properties.Peers)+1) // 还要加上自己，所以要加一
 	for _, peer := range config.Properties.Peers {
-		if _, ok := contains[peer]; ok {
+		if _, ok := contains[peer]; ok { // 确保相同节点只加入一次
 			continue
 		}
 		contains[peer] = struct{}{}
@@ -115,4 +120,39 @@ func (cluster *Cluster) Close() {
 	for _, node := range cluster.nodeConnections {
 		node.Close()
 	}
+}
+
+// isAuthenticated 确认集群是否认证授权通过
+func isAuthenticated(c redis.Connection) bool {
+	if config.Properties.RequirePass == "" {
+		return true
+	}
+	return config.Properties.RequirePass == c.GetPassword()
+}
+
+// Exec 在集群层面执行命令
+func (cluster *Cluster) Exec(c redis.Connection, cmdLine [][]byte) (result redis.Reply) {
+	// 处理异常崩溃情况
+	defer func() {
+		if err := recover(); err != nil {
+			logger.Warn(fmt.Sprintf("error occurs: %v\n%s", err, string(debug.Stack())))
+			result = &protocol.UnknownErrReply{}
+		}
+	}()
+
+	// 1. 根据不同情况处理不同命令
+	cmdName := strings.ToLower(string(cmdLine[0]))
+	if cmdName == "auth" {
+		return database2.Auth(c, cmdLine[1:])
+	}
+	if !isAuthenticated(c) {
+		return protocol.MakeErrReply("NOAUTH Authentication required")
+	}
+
+	return protocol.MakeOkReply()
+}
+
+// AfterClientClose 在关闭集群后做收尾工作
+func (cluster *Cluster) AfterClientClose(c redis.Connection) {
+	cluster.db.AfterClientClose(c)
 }

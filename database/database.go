@@ -46,7 +46,7 @@ func (mdb *MultiDB) Exec(client redis.Connection, cmdLine [][]byte) (result redi
 
 	// TODO 1. auth登录验证
 	if cmdName == "auth" {
-		return Auth(cmdLine[1:])
+		return Auth(client, cmdLine[1:])
 	}
 	if !isAuthenticated(client) {
 		return protocol.MakeErrReply("NOAUTH Authentication required")
@@ -68,22 +68,18 @@ func (mdb *MultiDB) Exec(client redis.Connection, cmdLine [][]byte) (result redi
 	return selectedDB.Exec(client, cmdLine)
 }
 
-func isAuthenticated(client redis.Connection) bool {
-	return true
-}
-
-func Auth(i [][]byte) redis.Reply {
-	return nil
-}
-
 func (m MultiDB) AfterClientClose(c redis.Connection) {
 	//TODO implement me
 	panic("implement me")
 }
 
 func (m MultiDB) Close() {
-	//TODO implement me
-	panic("implement me")
+	// TODO 先关闭replication (RDB同步)
+
+	// 再关闭aof
+	if m.aofHandler != nil {
+		m.aofHandler.Close()
+	}
 }
 
 // SelectDB 返回给定的子数据库

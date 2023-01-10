@@ -21,7 +21,7 @@ type Connection struct {
 	// password may be changed by CONFIG command during runtime, so store the password
 	password string
 
-	// selected db
+	// 该连接的db信息
 	selectedDB int
 	role       int32
 }
