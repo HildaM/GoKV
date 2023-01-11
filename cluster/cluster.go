@@ -25,6 +25,9 @@ const (
 // 如果只有一个节点，则不需要执行tcc事务处理
 var allowFastTransaction = true
 
+// CmdFunc represents the handler of a redis command
+type CmdFunc func(cluster *Cluster, c redis.Connection, cmdLine CmdLine) redis.Reply
+
 // PeerPicker 集群节点抽象
 type PeerPicker interface {
 	AddNode(keys ...string)
@@ -41,7 +44,7 @@ type Cluster struct {
 	nodeConnections map[string]*pool.Pool // 连接池
 
 	db           database.EmbedDB         // 数据库实例
-	transactions *dict.SimpleDict         // id --> Transaction 事务处理
+	transactions *dict.SimpleDict         // [事务id --> Transaction事务处理器]
 	idGenerator  *idgenerator.IDGenerator // 采用雪花算法生成ID
 
 	// use a variable to allow injecting stub for testing

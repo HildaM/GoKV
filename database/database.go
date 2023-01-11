@@ -26,8 +26,8 @@ type MultiDB struct {
 	aofHandler *aof.Handler
 
 	// store master node address
-	//slaveOf     string
-	//role        int32
+	slaveOf string
+	role    int32
 	//replication *replicationStatus
 }
 
@@ -172,4 +172,25 @@ func RewriteAOF(db *MultiDB, args [][]byte) redis.Reply {
 		return protocol.MakeErrReply(err.Error())
 	}
 	return protocol.MakeOkReply()
+}
+
+/*************** 锁相关 ***************/
+func (mdb *MultiDB) RWLocks(dbIndex int, writeKeys, readKeys []string) {
+	mdb.mustSelectDB(dbIndex).RWLocks(writeKeys, readKeys)
+}
+
+func (mdb *MultiDB) RWUnLocks(dbIndex int, writeKeys, readKeys []string) {
+	mdb.mustSelectDB(dbIndex).RWULocks(writeKeys, readKeys)
+}
+
+func (mdb *MultiDB) GetUndoLogs(dbIndex int, cmdLine [][]byte) []CmdLine {
+	return mdb.mustSelectDB(dbIndex).GetUndoLogs(cmdLine)
+}
+
+func (mdb *MultiDB) ExecWithLock(conn redis.Connection, cmdLine [][]byte) redis.Reply {
+	db, errReply := mdb.SelectDB(conn.GetDBIndex())
+	if errReply != nil {
+		return errReply
+	}
+	return db.execWithLock(cmdLine)
 }

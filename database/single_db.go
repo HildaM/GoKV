@@ -132,6 +132,25 @@ func (db *DB) execNormalCommand(cmdLine [][]byte) redis.Reply {
 	return fun(db, cmdLine[1:])
 }
 
+// execWithLock 在已经上锁场景下执行命令。
+// 执行过程中不需要像execNormalCommand那样先执行上锁操作
+func (db *DB) execWithLock(cmdLine [][]byte) redis.Reply {
+	cmdName := strings.ToLower(string(cmdLine[0]))
+	cmd, ok := cmdTable[cmdName]
+	if !ok {
+		return protocol.MakeErrReply("ERR unknow command: " + cmdName)
+	}
+
+	// 参数校验
+	if !validateArity(cmd.arity, cmdLine) {
+		return protocol.MakeArgNumErrReply(cmdName)
+	}
+
+	// 执行命令
+	fun := cmd.executor
+	return fun(db, cmdLine[1:])
+}
+
 // validateArity 检查参数是否正确
 // 正数表示必须达到的参数数目，负数表示至少达到的参数数目
 func validateArity(arity int, cmdArgs [][]byte) bool {

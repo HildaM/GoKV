@@ -55,6 +55,7 @@ func MGet(cluster *Cluster, c redis.Connection, cmdLine CmdLine) redis.Reply {
 }
 
 // MSet 将节点放入集群中不同的节点中
+// 哪个节点调用MSet，则该节点就是整个tcc事务的协调者
 func MSet(cluster *Cluster, c redis.Connection, cmdLine CmdLine) redis.Reply {
 	// 检查参数是否正确
 	argCount := len(cmdLine) - 1
@@ -79,10 +80,41 @@ func MSet(cluster *Cluster, c redis.Connection, cmdLine CmdLine) redis.Reply {
 		}
 	}
 
-	// 向集群节点发送命令并执行
-	var errReply error
-	txID := cluster.idGenerator.NextID()
+	// tcc事务 —— try阶段
+	var errReply redis.Reply
+	txID := cluster.idGenerator.NextID() // 使用雪花算法生成事务ID
 	txIDStr := strconv.FormatInt(txID, 10)
 	rollback := false // 是否回滚标志
+	for peer, group := range groupMap {
+		peerArgs := []string{txIDStr, "MSET"} // [txIDStr, "MSET", k1, v1, k2, v2.....]
+		for _, key := range group {
+			peerArgs = append(peerArgs, key, valueMap[key])
+		}
 
+		// 将命令请求发送给各个节点
+		var resp redis.Reply
+		if peer == cluster.self {
+			resp = execPrepare(cluster, c, utils.ToCmdLine2("Prepare", peerArgs...))
+		} else {
+			resp = cluster.relay(peer, c, utils.ToCmdLine2("Prepare", peerArgs...))
+		}
+		if protocol.IsErrorReply(resp) {
+			errReply = resp
+			rollback = true
+			break
+		}
+	}
+
+	if rollback {
+		requestRollback(cluster, c, txID, groupMap)
+	} else {
+		// 如果所有节点都已经准备就绪，那么可以commit了
+		_, errReply = requestCommit(cluster, c, txID, groupMap)
+		rollback = errReply != nil
+	}
+
+	if !rollback {
+		return &protocol.OkReply{}
+	}
+	return errReply
 }
