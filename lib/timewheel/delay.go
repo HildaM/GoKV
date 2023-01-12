@@ -1,33 +1,27 @@
 package timewheel
 
 import (
-	"container/list"
 	"time"
 )
 
-type location struct {
-	slot  int
-	etask *list.Element // 任务详情
+var tw = New(time.Second, 3600)
+
+func init() {
+	tw.Start()
 }
 
-// task 任务封装类
-type task struct {
-	delay  time.Duration // 任务延时执行时间点
-	circle int           // 任务循环次数
-	key    string
-	job    func() // 具体任务
+// Delay 将任务延迟指定时间执行
+func Delay(duration time.Duration, key string, job func()) {
+	tw.AddJob(duration, key, job)
 }
 
-// TimeWheel 定时任务
-type TimeWheel struct {
-	interval time.Duration // 时间
-	ticker   *time.Ticker  // 定时器
-	slots    []*list.List  // 任务队列
+// At 提交的任务必须在截至时间（at）内完成
+// Sub returns the duration t-u  ---> func (t Time) Sub(u Time) Duration
+func At(at time.Time, key string, job func()) {
+	tw.AddJob(at.Sub(time.Now()), key, job)
+}
 
-	timer             map[string]*location
-	currentPos        int         // 当前位置
-	slotNum           int         // 任务数量
-	addTackChannel    chan task   // 接收任务队列
-	removeTaskChannel chan string // 已完成任务队列
-	stopChannel       chan bool   // 取消任务队列
+// Cancel 取消任务
+func Cancel(key string) {
+	tw.RemoveJob(key)
 }

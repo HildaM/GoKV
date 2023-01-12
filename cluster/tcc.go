@@ -72,7 +72,7 @@ func execPrepare(cluster *Cluster, c redis.Connection, cmdLine CmdLine) redis.Re
 	txID := string(cmdLine[1])
 	cmdName := strings.ToLower(string(cmdLine[2]))
 	tx := NewTransaction(cluster, c, txID, cmdLine[2:]) // 事务处理器
-	cluster.transactions.Put(txID, tx)
+	cluster.transactions.Put(txID, tx)                  // 将txID对应的事务放入列表中，等待commit阶段的执行
 
 	// try
 	err := tx.prepare()
@@ -168,7 +168,69 @@ func (tx *Transaction) unLockKeys() {
 
 // requestCommit 将所有节点的事务提交
 func requestCommit(cluster *Cluster, c redis.Connection, txID int64, groupMap map[string][]string) ([]redis.Reply, protocol.ErrorReply) {
+	var errReply protocol.ErrorReply
+	txIDStr := strconv.FormatInt(txID, 10)
+	respList := make([]redis.Reply, 0, len(groupMap))
 
+	for node := range groupMap {
+		var resp redis.Reply
+		if node == cluster.self {
+			resp = execCommit(cluster, c, utils.ToCmdLine2("commit", txIDStr))
+		} else {
+			resp = cluster.relay(node, c, utils.ToCmdLine2("commit", txIDStr))
+		}
+
+		if protocol.IsErrorReply(resp) {
+			errReply = resp.(protocol.ErrorReply)
+			break
+		}
+
+		respList = append(respList, resp)
+	}
+
+	if errReply != nil {
+		requestRollback(cluster, c, txID, groupMap)
+		return nil, errReply
+	}
+
+	return respList, nil
+}
+
+// execCommit 实际执行commit的代码
+func execCommit(cluster *Cluster, c redis.Connection, cmdLine [][]byte) redis.Reply {
+	if len(cmdLine) != 2 {
+		return protocol.MakeErrReply("ERR wrong number of arguments for 'commit' command")
+	}
+
+	// 从待执行的事务列表中取出制定的事务
+	txID := string(cmdLine[1])
+	raw, ok := cluster.transactions.Get(txID) // 在execPrepare阶段放入transactions列表的事务处理器tx
+	if !ok {
+		return protocol.MakeIntReply(0)
+	}
+
+	tx, _ := raw.(*Transaction)
+
+	// 提交事务
+	tx.mu.Lock()
+	defer tx.mu.Unlock()
+
+	result := cluster.db.ExecWithLock(c, tx.cmdLine)
+	if protocol.IsErrorReply(result) {
+		// 命令执行失败，混滚代码
+		err := tx.rollbackWithLock()
+		return protocol.MakeErrReply(fmt.Sprintf("err occurs when rollback: %v, origin err: %s", err, result))
+	}
+
+	// 本地事务提交后的处理
+	tx.unLockKeys() // 解除keys的锁
+	tx.status = committedStatus
+	// 清除所有已完成的事务。但不要立即清除，以防回滚操作
+	timewheel.Delay(waitBeforeCleanTx, "", func() {
+		cluster.transactions.Remove(tx.id)
+	})
+
+	return result
 }
 
 // requestRollback 协调者请求所有参与节点回滚
@@ -185,5 +247,30 @@ func requestRollback(cluster *Cluster, c redis.Connection, txID int64, groupMap 
 
 // execRollback 回滚所有本地事务
 func execRollback(cluster *Cluster, c redis.Connection, cmdLine CmdLine) redis.Reply {
+	if len(cmdLine) != 2 {
+		return protocol.MakeErrReply("ERR wrong number of arguments for 'rollback' command")
+	}
 
+	txID := string(cmdLine[1])
+	raw, ok := cluster.transactions.Get(txID)
+	if !ok {
+		return protocol.MakeIntReply(0)
+	}
+	tx := raw.(*Transaction)
+
+	// 执行回滚
+	tx.mu.Lock()
+	defer tx.mu.Unlock()
+
+	err := tx.rollbackWithLock()
+	if err != nil {
+		return protocol.MakeErrReply(err.Error())
+	}
+
+	// 延时清除所有的事务。延时的目的在于等待其他节点完成
+	timewheel.Delay(waitBeforeCleanTx, "", func() {
+		cluster.transactions.Remove(tx.id)
+	})
+
+	return protocol.MakeIntReply(1)
 }
