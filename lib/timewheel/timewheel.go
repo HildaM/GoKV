@@ -93,14 +93,14 @@ func (tw *TimeWheel) Stop() {
 
 // tickHandler 定时器响应
 func (tw *TimeWheel) tickHandler() {
-	task := tw.slots[tw.currentPos]
+	taskList := tw.slots[tw.currentPos] // 取出任务队列
 	if tw.currentPos == tw.slotNum-1 {
 		tw.currentPos = 0 // 一个循环
 	} else {
 		tw.currentPos++
 	}
 
-	go tw.scanAndRunTask(task) // 执行任务
+	go tw.scanAndRunTask(taskList) // 执行任务中的任务
 }
 
 // scanAndRunTask 遍历任务队列，并执行任务
