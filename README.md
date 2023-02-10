@@ -1,18 +1,15 @@
-# Godis
+# GoKV
 ## 简介
-使用golang实现的简易redis
+• 使用 Golang 开发的仿 Redis 非关系型高并发数据库。
+• 完全使用原生 golang 编写，不引入任何外部框架实现。
 
-学习于 [Godis](https://github.com/HDT3213/godis) 项目，主要分分支将Godis进行重构，每个分支代表一个主要特性
+## 项目亮点
+1. 基于分段锁实现的 KV 存储引擎，确保数据高并发读写下的安全。参考 Java ConcurrentHashMap实现。
+2. 支持多种数据结构，支持 string、set、zset 等 redis 数据结构
+3. 支持 Redis 的 AOF 持久化与重写功能。
+4. 支持 pipeline 模式的客户端。采用 channel 异步编程等 golang 并发编程实现。
+5. 实现类似 redis 的网络连接池。提升 GoKV 网络连接性能。
+6. 支持集群模式。采用一致性 hash 算法实现集群系欸但的定位、获取。
+7. 支持事务处理。集群模式下采用 TCC 分布式事务。同时支持本地原子性事务处理，弥补了 Redis
+   没有本地事务的缺点
 
-## 进度
-1. 01_tcp_server：实现redis最基础的tcp服务（22.11.08）
-2. 02_redis_protocol_parser：实现redis数据解析协议（22.11.11）。该分支代码能够正常连接redis客户端，但是不能存储数据，因为没有实现内存数据库
-3. 03_database：实现redis基本数据库框架（22.11.16）。当前只实现了简单的ping命令作为测试，之后将加入更多redis命令
-4. 04_support_redis_command：该分支主要实现各种redis所支持的命令，同时实现各种redis常见的数据结构。正在实现集群模式中
-
-## 使用方法
-目前仅支持telnet访问：`telnet 127.0.0.1 6399`
-之后将支持使用redis-cli访问
-
-## 学习方式
-如果有人想要学习 [Godis](https://github.com/HDT3213/godis) 项目，可以按照我的分支顺序一步一步地搭建整个项目。具体的步骤可以看每个分支中的git commit来逐步实现
