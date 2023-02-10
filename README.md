@@ -1,7 +1,7 @@
 # GoKV
 ## 简介
-• 使用 Golang 开发的仿 Redis 非关系型高并发数据库。
-• 完全使用原生 golang 编写，不引入任何外部框架实现。
+- 使用 Golang 开发的仿 Redis 非关系型高并发数据库。
+- 完全使用原生 golang 编写，不引入任何外部框架实现。
 
 ## 项目亮点
 1. 基于分段锁实现的 KV 存储引擎，确保数据高并发读写下的安全。参考 Java ConcurrentHashMap实现。
